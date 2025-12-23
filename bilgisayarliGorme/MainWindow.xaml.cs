@@ -29,9 +29,8 @@ namespace bilgisayarliGorme
             InitializeComponent();
         }
 
-        // ==========================================
+ 
         // 1. YARDIMCI: Resmi Ekranda Gösterme Motoru
-        // ==========================================
         private BitmapImage ResimCevir(Bitmap bitmap)
         {
             using (MemoryStream memory = new MemoryStream())
@@ -47,9 +46,7 @@ namespace bilgisayarliGorme
             }
         }
 
-        // ==========================================
-        // 2. YARDIMCI: Tabloyu Doldurma Motoru
-        // ==========================================
+        //Tabloyu Doldurma Motoru
         private void ListeyiDoldur(Bitmap bmp, ListView liste)
         {
             List<PikselVerisi> veriler = new List<PikselVerisi>();
@@ -74,9 +71,8 @@ namespace bilgisayarliGorme
             liste.ItemsSource = veriler;
         }
 
-        // ==========================================
-        // 3. BUTON: Resim Yükleme İşlemi
-        // ==========================================
+     
+        // Resim Yükleme İşlemi
         private void btnResimYukle_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog dosyaAc = new OpenFileDialog();
@@ -119,15 +115,11 @@ namespace bilgisayarliGorme
 
             Bitmap cikisResmi = null;
 
-            // 4. Hangi işlem seçildiyse ona göre hareket et (Switch-Case Yapısı)
+            // 4. Hangi işlem seçildiyse ona göre hareket et
             switch (secilenIslem)
             {
                 case "Gri Yap":
                     cikisResmi = GriyeCevir(girisResmi);
-                    break;
-
-                case "Ters Çevir": // Yeni eklediğimiz özellik (Tasarımda yoksa ekle)
-                    cikisResmi = TersCevir(girisResmi);
                     break;
 
                 case "Histogram Çiz": // Yeni eklediğimiz özellik
@@ -163,27 +155,8 @@ namespace bilgisayarliGorme
             }
             return yeni;
         }
-        // ==========================================
-        // 2. HAFTA: TERS ÇEVİRME (NEGATİF)
-        // ==========================================
-        private Bitmap TersCevir(Bitmap bmp)
-        {
-            Bitmap yeni = new Bitmap(bmp.Width, bmp.Height);
-            for (int x = 0; x < bmp.Width; x++)
-            {
-                for (int y = 0; y < bmp.Height; y++)
-                {
-                    Color p = bmp.GetPixel(x, y);
-                    // Formül: 255'ten çıkarınca tam zıttı (negatifi) olur
-                    yeni.SetPixel(x, y, Color.FromArgb(255 - p.R, 255 - p.G, 255 - p.B));
-                }
-            }
-            return yeni;
-        }
-
-       // ==========================================
-        // 2. HAFTA: HİSTOGRAM ÇİZME (DÜZELTİLMİŞ)
-        // ==========================================
+    
+        // HİSTOGRAM ÇİZME (DÜZELTİLMİŞ)
         private void HistogramCiz(Bitmap bmp)
         {
             // 1. Önce eski çizimleri temizle

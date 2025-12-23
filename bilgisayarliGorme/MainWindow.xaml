@@ -23,7 +23,6 @@
         <Label Content="İşlem Seç:" HorizontalAlignment="Left" Margin="320,100,0,0" VerticalAlignment="Top"/>
         <ComboBox x:Name="cmbIslemler" HorizontalAlignment="Left" Margin="410,105,0,0" VerticalAlignment="Top" Width="150">
             <ComboBoxItem Content="Gri Yap"/>
-            <ComboBoxItem Content="Ters Çevir"/> 
             <ComboBoxItem Content="Histogram Çiz"/>
             <ComboBoxItem Content="KM İntensity"/>
             <ComboBoxItem Content="KM Öklid RGB"/>
