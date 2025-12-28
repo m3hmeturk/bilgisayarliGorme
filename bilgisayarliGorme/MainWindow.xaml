@@ -9,7 +9,9 @@
     <Grid Margin="10">
 
         <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="30,30,0,0" Width="220" Height="280">
+
             <Image x:Name="imgGiris" Stretch="Uniform" />
+
         </Border>
 
         <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="740,30,0,0" Width="220" Height="280">

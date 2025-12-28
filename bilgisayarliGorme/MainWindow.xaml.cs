@@ -23,6 +23,8 @@ namespace bilgisayarliGorme
     {
         // Yüklenen resmi hafızada tutacak ana değişken
         Bitmap girisResmi;
+        // Bu satırı Bitmap girisResmi; satırının hemen altına yapıştır:"RenkYapisi nedir?"
+        public struct RenkYapisi { public int r; public int g; public int b; }
 
         public MainWindow()
         {
@@ -150,6 +152,19 @@ namespace bilgisayarliGorme
 
                     // 2. K-Means motorunu çalıştır
                     cikisResmi = KMeansIntensity(girisResmi, kDegeri);
+                    break;
+                case "KM Öklid RGB":
+                    // 1. K Değerini Al (Matris Boyutu kutusundan)
+                    if (cmbMatrisBoyutu.SelectedItem == null)
+                    {
+                        MessageBox.Show("Lütfen bir K değeri (Matris Boyutu) seçiniz!");
+                        return;
+                    }
+                    // Seçilen sayıyı al
+                    int kRgb = int.Parse((cmbMatrisBoyutu.SelectedItem as ComboBoxItem).Content.ToString());
+
+                    // 2. Fonksiyonu Çağır
+                    cikisResmi = KMOklidRGB(girisResmi, kRgb);
                     break;
 
                 default:
@@ -342,7 +357,7 @@ namespace bilgisayarliGorme
             int iterasyon = 0;
 
             // 3. K-Means Döngüsü (Merkezler sabitlenene kadar dön)
-            while (degisimVar && iterasyon < 20) // Sonsuz döngü olmasın diye 20 ile sınırladık
+            while (degisimVar && iterasyon < 100) // Sonsuz döngü olmasın diye 100 ile sınırladık
             {
                 degisimVar = false;
                 iterasyon++;
@@ -416,5 +431,116 @@ namespace bilgisayarliGorme
             return sonuc;
         }
 
+        // ==========================================
+        // 5. HAFTA: K-MEANS RGB (RENKLİ) - 100 İTERASYON
+        // ==========================================
+        private Bitmap KMOklidRGB(Bitmap orjinal, int kDegeri)
+        {
+            int genislik = orjinal.Width;
+            int yukseklik = orjinal.Height;
+
+            // 1. Resimdeki tüm renkleri diziye al
+            RenkYapisi[] pikseller = new RenkYapisi[genislik * yukseklik];
+            int index = 0;
+            for (int y = 0; y < yukseklik; y++)
+            {
+                for (int x = 0; x < genislik; x++)
+                {
+                    Color c = orjinal.GetPixel(x, y);
+                    pikseller[index++] = new RenkYapisi { r = c.R, g = c.G, b = c.B };
+                }
+            }
+
+            // 2. Rastgele Merkezler Seç
+            Random rastgele = new Random();
+            RenkYapisi[] merkezler = new RenkYapisi[kDegeri];
+            for (int i = 0; i < kDegeri; i++)
+            {
+                merkezler[i] = pikseller[rastgele.Next(pikseller.Length)];
+            }
+
+            int[] kumeAtamalari = new int[pikseller.Length];
+            bool degisimVar = true;
+            int iterasyon = 0;
+
+            // 3. Döngü (100 İterasyon)
+            while (degisimVar && iterasyon < 100)
+            {
+                degisimVar = false;
+                iterasyon++;
+
+                // A) En yakın merkezi bul (Öklid)
+                for (int i = 0; i < pikseller.Length; i++)
+                {
+                    RenkYapisi p = pikseller[i];
+                    int enYakinKume = 0;
+
+                    double enKucukMesafe = Math.Pow(p.r - merkezler[0].r, 2) +
+                                           Math.Pow(p.g - merkezler[0].g, 2) +
+                                           Math.Pow(p.b - merkezler[0].b, 2);
+
+                    for (int j = 1; j < kDegeri; j++)
+                    {
+                        double mesafe = Math.Pow(p.r - merkezler[j].r, 2) +
+                                        Math.Pow(p.g - merkezler[j].g, 2) +
+                                        Math.Pow(p.b - merkezler[j].b, 2);
+
+                        if (mesafe < enKucukMesafe)
+                        {
+                            enKucukMesafe = mesafe;
+                            enYakinKume = j;
+                        }
+                    }
+
+                    if (kumeAtamalari[i] != enYakinKume)
+                    {
+                        kumeAtamalari[i] = enYakinKume;
+                        degisimVar = true;
+                    }
+                }
+
+                // B) Merkezleri Güncelle
+                long[] tR = new long[kDegeri];
+                long[] tG = new long[kDegeri];
+                long[] tB = new long[kDegeri];
+                int[] sayilar = new int[kDegeri];
+
+                for (int i = 0; i < pikseller.Length; i++)
+                {
+                    int k = kumeAtamalari[i];
+                    tR[k] += pikseller[i].r;
+                    tG[k] += pikseller[i].g;
+                    tB[k] += pikseller[i].b;
+                    sayilar[k]++;
+                }
+
+                for (int j = 0; j < kDegeri; j++)
+                {
+                    if (sayilar[j] > 0)
+                    {
+                        merkezler[j].r = (int)(tR[j] / sayilar[j]);
+                        merkezler[j].g = (int)(tG[j] / sayilar[j]);
+                        merkezler[j].b = (int)(tB[j] / sayilar[j]);
+                    }
+                }
+            }
+
+            // 4. İstatistikleri Ekrana Yaz
+            lblIterasyon.Content = iterasyon.ToString();
+            lblTDegeri.Content = "RGB Merkezleri";
+
+            // 5. Sonuç Resmini Oluştur
+            Bitmap sonuc = new Bitmap(genislik, yukseklik);
+            index = 0;
+            for (int y = 0; y < yukseklik; y++)
+            {
+                for (int x = 0; x < genislik; x++)
+                {
+                    int kume = kumeAtamalari[index++];
+                    sonuc.SetPixel(x, y, Color.FromArgb(merkezler[kume].r, merkezler[kume].g, merkezler[kume].b));
+                }
+            }
+            return sonuc;
+        }
     }
 }
