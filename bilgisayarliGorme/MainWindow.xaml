@@ -4,7 +4,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Görüntü İşleme Projesi" Height="650" Width="1000" WindowStartupLocation="CenterScreen">
+        Title="Görüntü İşleme Projesi" Height="650" Width="1000" 
+        WindowStartupLocation="CenterScreen"
+        MouseMove="Window_MouseMove"
+        RenderOptions.BitmapScalingMode="NearestNeighbor">
 
     <Grid Margin="10">
 
@@ -18,7 +21,7 @@
             <Image x:Name="imgCikis" Stretch="Uniform" />
         </Border>
 
-        <Button x:Name="btnUygula" Content="UYGULA" HorizontalAlignment="Left" Margin="350,30,0,0" VerticalAlignment="Top" Height="40" Width="100" Click="btnUygula_Click"/>
+        <Button x:Name="btnUygula" Content="UYGULA" HorizontalAlignment="Left" Margin="410,30,0,0" VerticalAlignment="Top" Height="40" Width="100" Click="btnUygula_Click"/>
 
         <Button x:Name="btnResimYukle" Content="Resim Yükle" HorizontalAlignment="Left" Margin="30,320,0,0" VerticalAlignment="Top" Height="30" Width="100" Click="btnResimYukle_Click"/>
 
@@ -34,19 +37,25 @@
         </ComboBox>
 
         <Label Content="Matris/K Değeri:" HorizontalAlignment="Left" Margin="300,150,0,0" VerticalAlignment="Top"/>
-        <ComboBox x:Name="cmbMatrisBoyutu" HorizontalAlignment="Left" Margin="410,155,0,0" VerticalAlignment="Top" Width="150" SelectedIndex="1">
+        <ComboBox x:Name="cmbMatrisBoyutu" HorizontalAlignment="Left" Margin="410,155,0,0" VerticalAlignment="Top" Width="150" SelectedIndex="-1">
             <ComboBoxItem Content="2"/>
             <ComboBoxItem Content="3"/>
             <ComboBoxItem Content="4"/>
             <ComboBoxItem Content="5"/>
             <ComboBoxItem Content="6"/>
             <ComboBoxItem Content="7"/>
+            <ComboBoxItem Content="8"/>
+            <ComboBoxItem Content="9"/>
             <ComboBoxItem Content="10"/>
             <ComboBoxItem Content="20"/>
+            <ComboBoxItem Content="30"/>
+            <ComboBoxItem Content="40"/>
             <ComboBoxItem Content="50"/>
         </ComboBox>
-
-        <Border BorderBrush="Black" BorderThickness="1" Margin="410,220,380,250">
+        <Label x:Name="lblFareRenk" Content="X:0 Y:0 | R:0 G:0 B:0" 
+       HorizontalAlignment="Left" VerticalAlignment="Top" 
+       Margin="401,205,0,0" FontWeight="Bold" FontSize="14"/>
+        <Border BorderBrush="Black" BorderThickness="1" Margin="401,252,389,218">
             <Canvas x:Name="cnvHistogram"/>
         </Border>
 
