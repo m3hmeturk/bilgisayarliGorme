@@ -10,91 +10,122 @@
         RenderOptions.BitmapScalingMode="NearestNeighbor">
 
     <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
 
-        <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="30,30,0,0" Width="220" Height="280">
+        <Grid Grid.Column="0" VerticalAlignment="Top">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-            <Image x:Name="imgGiris" Stretch="Uniform" />
+            <Border Grid.Row="0" BorderBrush="Black" BorderThickness="1" Width="220" Height="280" Margin="0,20,0,10">
+                <Image x:Name="imgGiris" Stretch="Uniform" />
+            </Border>
 
-        </Border>
+            <Button Grid.Row="1" x:Name="btnResimYukle" Content="Resim Yükle" 
+                    Height="30" Width="100" HorizontalAlignment="Left" Margin="0,0,0,10"
+                    Click="btnResimYukle_Click"/>
 
-        <Border BorderBrush="Black" BorderThickness="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="740,30,0,0" Width="220" Height="280">
-            <Image x:Name="imgCikis" Stretch="Uniform" />
-        </Border>
+            <ListView Grid.Row="2" x:Name="lstGirisPikselleri" BorderBrush="Gray" BorderThickness="1" Height="250" Width="220">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="No" Width="50" DisplayMemberBinding="{Binding PikselNo}" />
+                        <GridViewColumn Header="R" Width="40" DisplayMemberBinding="{Binding R}" />
+                        <GridViewColumn Header="G" Width="40" DisplayMemberBinding="{Binding G}" />
+                        <GridViewColumn Header="B" Width="40" DisplayMemberBinding="{Binding B}" />
+                    </GridView>
+                </ListView.View>
+            </ListView>
+        </Grid>
 
-        <Button x:Name="btnUygula" Content="UYGULA" HorizontalAlignment="Left" Margin="410,30,0,0" VerticalAlignment="Top" Height="40" Width="100" Click="btnUygula_Click"/>
+        <StackPanel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10,20,10,0">
 
-        <Button x:Name="btnResimYukle" Content="Resim Yükle" HorizontalAlignment="Left" Margin="30,320,0,0" VerticalAlignment="Top" Height="30" Width="100" Click="btnResimYukle_Click"/>
+            <Button x:Name="btnUygula" Content="UYGULA" Height="40" Width="120" Margin="0,0,0,20" Click="btnUygula_Click"/>
 
-        <Label Content="İşlem Seç:" HorizontalAlignment="Left" Margin="320,100,0,0" VerticalAlignment="Top"/>
-        <ComboBox x:Name="cmbIslemler" HorizontalAlignment="Left" Margin="410,105,0,0" VerticalAlignment="Top" Width="150">
-            <ComboBoxItem Content="Gri Yap"/>
-            <ComboBoxItem Content="Histogram Çiz"/>
-            <ComboBoxItem Content="KM İntensity"/>
-            <ComboBoxItem Content="KM Öklid RGB"/>
-            <ComboBoxItem Content="Sobel Kenar Bulma"/>
-            <ComboBoxItem Content="Mahalanobis ND"/>
-            <ComboBoxItem Content="Mahalanobis Gri Tonlama"/>
-        </ComboBox>
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-        <Label Content="Matris/K Değeri:" HorizontalAlignment="Left" Margin="300,150,0,0" VerticalAlignment="Top"/>
-        <ComboBox x:Name="cmbMatrisBoyutu" HorizontalAlignment="Left" Margin="410,155,0,0" VerticalAlignment="Top" Width="150" SelectedIndex="-1">
-            <ComboBoxItem Content="2"/>
-            <ComboBoxItem Content="3"/>
-            <ComboBoxItem Content="4"/>
-            <ComboBoxItem Content="5"/>
-            <ComboBoxItem Content="6"/>
-            <ComboBoxItem Content="7"/>
-            <ComboBoxItem Content="8"/>
-            <ComboBoxItem Content="9"/>
-            <ComboBoxItem Content="10"/>
-            <ComboBoxItem Content="20"/>
-            <ComboBoxItem Content="30"/>
-            <ComboBoxItem Content="40"/>
-            <ComboBoxItem Content="50"/>
-        </ComboBox>
-        <Label x:Name="lblFareRenk" Content="X:0 Y:0 | R:0 G:0 B:0" 
-       HorizontalAlignment="Left" VerticalAlignment="Top" 
-       Margin="401,205,0,0" FontWeight="Bold" FontSize="14"/>
-        <Border BorderBrush="Black" BorderThickness="1" Margin="401,252,389,218">
-            <Canvas x:Name="cnvHistogram"/>
-        </Border>
+                <Label Grid.Row="0" Grid.Column="0" Content="İşlem Seç:" VerticalAlignment="Center"/>
+                <ComboBox Grid.Row="0" Grid.Column="1" x:Name="cmbIslemler" Width="160" Margin="10,5,0,5">
+                    <ComboBoxItem Content="Gri Yap"/>
+                    <ComboBoxItem Content="Histogram Çiz"/>
+                    <ComboBoxItem Content="Sobel Kenar Bulma"/>
+                    <ComboBoxItem Content="KM İntensity"/>
+                    <ComboBoxItem Content="KM Öklid RGB"/>
+                    <ComboBoxItem Content="Mahalanobis ND"/>
+                    <ComboBoxItem Content="Mahalanobis Gri Tonlama"/>
+                </ComboBox>
 
-        <StackPanel Margin="410,420,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
-            <StackPanel Orientation="Horizontal" Margin="0,5">
-                <Label Content="T Değeri:" FontWeight="Bold" Width="100"/>
-                <Label x:Name="lblTDegeri" Content="0"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="0,5">
-                <Label Content="İterasyon:" FontWeight="Bold" Width="100"/>
-                <Label x:Name="lblIterasyon" Content="0"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="0,5">
-                <Label Content="Toplam Piksel:" FontWeight="Bold" Width="100"/>
-                <Label x:Name="lblPikselSayisi" Content="0"/>
+                <Label Grid.Row="1" Grid.Column="0" Content="Matris/K Değeri:" VerticalAlignment="Center"/>
+                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="cmbMatrisBoyutu" Width="160" Margin="10,5,0,5" SelectedIndex="-1">
+                    <ComboBoxItem Content="2"/>
+                    <ComboBoxItem Content="3"/>
+                    <ComboBoxItem Content="4"/>
+                    <ComboBoxItem Content="5"/>
+                    <ComboBoxItem Content="6"/>
+                    <ComboBoxItem Content="8"/>
+                    <ComboBoxItem Content="10"/>
+                    <ComboBoxItem Content="20"/>
+                    <ComboBoxItem Content="50"/>
+                </ComboBox>
+            </Grid>
+
+            <Label x:Name="lblFareRenk" Content="X:0 Y:0 | R:0 G:0 B:0" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+
+            <Border BorderBrush="Black" BorderThickness="1" Height="140" Width="200" Margin="0,0,0,20">
+                <Canvas x:Name="cnvHistogram"/>
+            </Border>
+
+            <StackPanel HorizontalAlignment="Left">
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Label Content="T Değeri:" FontWeight="Bold" Width="100"/>
+                    <Label x:Name="lblTDegeri" Content="0"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Label Content="İterasyon:" FontWeight="Bold" Width="100"/>
+                    <Label x:Name="lblIterasyon" Content="0"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,2">
+                    <Label Content="Toplam Piksel:" FontWeight="Bold" Width="100"/>
+                    <Label x:Name="lblPikselSayisi" Content="0"/>
+                </StackPanel>
             </StackPanel>
         </StackPanel>
 
-        <ListView x:Name="lstGirisPikselleri" BorderBrush="Gray" BorderThickness="1" Margin="30,360,740,20">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="No" Width="50" DisplayMemberBinding="{Binding PikselNo}" />
-                    <GridViewColumn Header="R" Width="40" DisplayMemberBinding="{Binding R}" />
-                    <GridViewColumn Header="G" Width="40" DisplayMemberBinding="{Binding G}" />
-                    <GridViewColumn Header="B" Width="40" DisplayMemberBinding="{Binding B}" />
-                </GridView>
-            </ListView.View>
-        </ListView>
+        <Grid Grid.Column="2" VerticalAlignment="Top">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <ListView x:Name="lstCikisPikselleri" BorderBrush="Gray" BorderThickness="1" Margin="740,360,30,20">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="No" Width="50" DisplayMemberBinding="{Binding PikselNo}" />
-                    <GridViewColumn Header="R" Width="40" DisplayMemberBinding="{Binding R}" />
-                    <GridViewColumn Header="G" Width="40" DisplayMemberBinding="{Binding G}" />
-                    <GridViewColumn Header="B" Width="40" DisplayMemberBinding="{Binding B}" />
-                </GridView>
-            </ListView.View>
-        </ListView>
+            <Border Grid.Row="0" BorderBrush="Black" BorderThickness="1" Width="220" Height="280" Margin="0,20,0,40">
+                <Image x:Name="imgCikis" Stretch="Uniform" />
+            </Border>
+
+            <ListView Grid.Row="2" x:Name="lstCikisPikselleri" BorderBrush="Gray" BorderThickness="1" Height="250" Width="220">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="No" Width="50" DisplayMemberBinding="{Binding PikselNo}" />
+                        <GridViewColumn Header="R" Width="40" DisplayMemberBinding="{Binding R}" />
+                        <GridViewColumn Header="G" Width="40" DisplayMemberBinding="{Binding G}" />
+                        <GridViewColumn Header="B" Width="40" DisplayMemberBinding="{Binding B}" />
+                    </GridView>
+                </ListView.View>
+            </ListView>
+        </Grid>
 
     </Grid>
 </Window>

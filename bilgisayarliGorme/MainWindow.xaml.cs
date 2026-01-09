@@ -552,13 +552,14 @@ namespace bilgisayarliGorme
         }
 
         // 1. MAHALANOBIS RGB 
+        
         private Bitmap KMMahalanobis(Bitmap renkliResim, int k)
         {
-            int maxIter = 100; // İterasyon sınırı
+            int maxIter = 20; // İterasyon sınırı
             int width = renkliResim.Width;
             int height = renkliResim.Height;
 
-            // 1) Resimdeki tüm piksel değerlerini RGB şeklinde diziye çekelim
+            // 1) Pikselleri al
             (int R, int G, int B)[] pixels = new (int, int, int)[width * height];
             int index = 0;
             for (int y = 0; y < height; y++)
@@ -570,7 +571,7 @@ namespace bilgisayarliGorme
                 }
             }
 
-            // 2) Rastgele k merkez seçelim
+            // 2) Rastgele k merkez seç
             Random rand = new Random();
             (double R, double G, double B)[] means = pixels
                 .OrderBy(p => rand.Next())
@@ -578,17 +579,12 @@ namespace bilgisayarliGorme
                 .Select(px => ((double)px.R, (double)px.G, (double)px.B))
                 .ToArray();
 
-            // 3) Başlangıçta her kümeye Identity (birim) kovaryans matrisi verelim
+            // 3) Başlangıç Kovaryans Matrisleri
             double[][,] covariances = new double[k][,];
-            for (int i = 0; i < k; i++)
-            {
-                covariances[i] = Identity3x3();
-            }
+            for (int i = 0; i < k; i++) covariances[i] = Identity3x3();
 
-            // 4) Piksel-küme atamaları
             int[] clusterAssignments = new int[pixels.Length];
-            for (int i = 0; i < clusterAssignments.Length; i++)
-                clusterAssignments[i] = -1;
+            for (int i = 0; i < clusterAssignments.Length; i++) clusterAssignments[i] = -1;
 
             bool changed = true;
             int iteration = 0;
@@ -599,17 +595,23 @@ namespace bilgisayarliGorme
                 iteration++;
                 changed = false;
 
-                // 5.1) Her pikseli en yakın kümeye ata
+                // 5.1) Atama
                 for (int i = 0; i < pixels.Length; i++)
                 {
                     (int r, int g, int b) = pixels[i];
-
                     int bestCluster = 0;
+
+                    // İlk merkeze olan mesafe
                     double bestDist = MahalanobisDistance(r, g, b, means[0], covariances[0]);
+
+                    // Eğer hesap hatası (NaN) varsa çok büyük sayı ver ki seçilmesin
+                    if (double.IsNaN(bestDist)) bestDist = double.MaxValue;
 
                     for (int m = 1; m < k; m++)
                     {
                         double dist = MahalanobisDistance(r, g, b, means[m], covariances[m]);
+                        if (double.IsNaN(dist)) dist = double.MaxValue;
+
                         if (dist < bestDist)
                         {
                             bestDist = dist;
@@ -624,7 +626,7 @@ namespace bilgisayarliGorme
                     }
                 }
 
-                // 5.2) Yeni ortalamalar hesapla
+                // 5.2) Ortalamaları Güncelle
                 double[] sumR = new double[k];
                 double[] sumG = new double[k];
                 double[] sumB = new double[k];
@@ -642,16 +644,14 @@ namespace bilgisayarliGorme
                 for (int m = 0; m < k; m++)
                 {
                     if (counts[m] > 0)
-                    {
                         means[m] = (sumR[m] / counts[m], sumG[m] / counts[m], sumB[m] / counts[m]);
-                    }
                 }
 
-                // 5.3) Yeni kovaryans matrislerini hesapla
+                // 5.3) Kovaryans Matrislerini Güncelle (VE DÜZELT)
                 double[][,] newCovs = new double[k][,];
                 for (int m = 0; m < k; m++)
                 {
-                    if (counts[m] < 2)
+                    if (counts[m] < 10) // Yetersiz veri varsa Birim Matris yap
                     {
                         newCovs[m] = Identity3x3();
                         continue;
@@ -678,6 +678,14 @@ namespace bilgisayarliGorme
                         for (int col = 0; col < 3; col++)
                             cov[row, col] /= counts[m];
 
+                    // Matrisin çökmesini engellemek için köşegenlere büyük sayı ekliyoruz.
+                    // Bu işlem Mahalanobis'i biraz Öklid'e benzetir ama dağılım özelliğini korur.
+                    // Bu sayede siyah ekran sorunu çözülür.
+                    double guvenlikPayi = 100.0;
+                    cov[0, 0] += guvenlikPayi;
+                    cov[1, 1] += guvenlikPayi;
+                    cov[2, 2] += guvenlikPayi;
+
                     if (!IsInvertible3x3(cov))
                         newCovs[m] = Identity3x3();
                     else
@@ -686,11 +694,11 @@ namespace bilgisayarliGorme
                 covariances = newCovs;
             }
 
-            // Arayüzü güncelle
+            // Arayüz
             lblIterasyon.Content = iteration.ToString();
-            lblTDegeri.Content = "Mahalanobis RGB";
+            lblTDegeri.Content = "Mahalanobis ND";
 
-            // 6) Sonuç resmi oluştur
+            // 6) Sonuç
             Bitmap output = new Bitmap(width, height);
             index = 0;
             for (int y = 0; y < height; y++)
@@ -701,21 +709,20 @@ namespace bilgisayarliGorme
                     int rr = ClampToByte(means[cIndex].R);
                     int gg = ClampToByte(means[cIndex].G);
                     int bb = ClampToByte(means[cIndex].B);
-
                     output.SetPixel(x, y, Color.FromArgb(rr, gg, bb));
                 }
             }
             return output;
         }
 
-        // 2. MAHALANOBIS GRİ TONLAMA
+        // 2. MAHALANOBIS GRİ TONLAMA 
         private Bitmap KMMahalanobisGri(Bitmap griResim, int k)
         {
-            int maxIter = 20;
+            int maxIter = 100; // İterasyon 100 olsun
             int genislik = griResim.Width;
             int yukseklik = griResim.Height;
 
-            // 1) Resimdeki tüm gri ton değerlerini diziye çekelim
+            // 1) Resimdeki tüm gri ton değerlerini diziye çek
             int[] pikseller = new int[genislik * yukseklik];
             int indeks = 0;
             for (int y = 0; y < yukseklik; y++)
@@ -723,12 +730,13 @@ namespace bilgisayarliGorme
                 for (int x = 0; x < genislik; x++)
                 {
                     Color renk = griResim.GetPixel(x, y);
-                    int griDeger = (int)(renk.R * 0.3 + renk.G * 0.59 + renk.B * 0.11); // Luma yöntemi daha doğrudur
+                    // Luma yöntemi (Daha doğal gri)
+                    int griDeger = (int)(renk.R * 0.3 + renk.G * 0.59 + renk.B * 0.11);
                     pikseller[indeks++] = griDeger;
                 }
             }
 
-            // 2) Rastgele k merkez seçelim
+            // 2) Rastgele k merkez seç
             Random rastgele = new Random();
             double[] ortalamalar = pikseller
                 .OrderBy(p => rastgele.Next())
@@ -756,11 +764,16 @@ namespace bilgisayarliGorme
                 {
                     int griDeger = pikseller[i];
                     int enIyiKume = 0;
+
+                    // İlk merkeze olan mesafe
                     double enIyiMesafe = MahalanobisMesafesi(griDeger, ortalamalar[0], varyanslar[0]);
+                    if (double.IsNaN(enIyiMesafe)) enIyiMesafe = double.MaxValue;
 
                     for (int m = 1; m < k; m++)
                     {
                         double mesafe = MahalanobisMesafesi(griDeger, ortalamalar[m], varyanslar[m]);
+                        if (double.IsNaN(mesafe)) mesafe = double.MaxValue;
+
                         if (mesafe < enIyiMesafe)
                         {
                             enIyiMesafe = mesafe;
@@ -801,8 +814,13 @@ namespace bilgisayarliGorme
 
                 for (int m = 0; m < k; m++)
                 {
-                    if (sayilar[m] > 1) yeniVaryanslar[m] /= sayilar[m];
-                    else yeniVaryanslar[m] = 1.0;
+                    if (sayilar[m] > 1)
+                        yeniVaryanslar[m] /= sayilar[m];
+                    else
+                        yeniVaryanslar[m] = 1.0;
+
+                    // Varyansın sıfıra düşüp patlamasını engellemek için güvenlik payı ekliyoruz.
+                    yeniVaryanslar[m] += 100.0;
                 }
                 varyanslar = yeniVaryanslar;
             }
