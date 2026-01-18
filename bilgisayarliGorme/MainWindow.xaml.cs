@@ -1,16 +1,17 @@
-﻿using Microsoft.Win32; // Dosya seçme penceresi için
+﻿using Microsoft.Win32; 
 using System;
-using System.Collections.Generic; // Listeler için
-using System.Drawing; // Görüntü işleme kütüphanesi (Bitmap)
-using System.IO; // Hafıza işlemleri için
+using System.Collections.Generic; 
+using System.Drawing; 
+using System.IO; 
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media.Imaging; // Ekranda gösterme işlemleri için
-using Color = System.Drawing.Color; // Rengi System.Drawing'den alıyoruz
+using System.Windows.Media.Imaging; 
+using Color = System.Drawing.Color; 
 
 namespace bilgisayarliGorme
 {
-    // TABLO (LISTVIEW) İÇİN SATIR YAPISI
+    // TABLO LISTVIEW İÇİN SATIR YAPISI
     public class PikselVerisi
     {
         public string PikselNo { get; set; }
@@ -32,7 +33,7 @@ namespace bilgisayarliGorme
         }
 
  
-        // 1. YARDIMCI: Resmi Ekranda Gösterme Motoru
+        // Resmi Ekranda Gösterme 
         private BitmapImage ResimCevir(Bitmap bitmap)
         {
             using (MemoryStream memory = new MemoryStream())
@@ -48,7 +49,7 @@ namespace bilgisayarliGorme
             }
         }
 
-        //Tabloyu Doldurma Motoru
+        //Tabloyu Doldurma 
         private void ListeyiDoldur(Bitmap bmp, ListView liste)
         {
             List<PikselVerisi> veriler = new List<PikselVerisi>();
@@ -82,117 +83,101 @@ namespace bilgisayarliGorme
 
             if (dosyaAc.ShowDialog() == true)
             {
-                // Resmi hafızaya al
                 girisResmi = new Bitmap(dosyaAc.FileName);
-
-                // Ekranda göster
                 imgGiris.Source = ResimCevir(girisResmi);
-
-                // Tabloyu doldur
                 ListeyiDoldur(girisResmi, lstGirisPikselleri);
-
-                // İstatistik yazısını güncelle
                 lblPikselSayisi.Content = (girisResmi.Width * girisResmi.Height).ToString();
             }
         }
 
         private void btnUygula_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Önce resim yüklenmiş mi kontrol et
             if (girisResmi == null)
             {
                 MessageBox.Show("Lütfen önce bir resim yükleyiniz.");
                 return;
             }
 
-            // 2. Bir işlem seçilmiş mi kontrol et
             if (cmbIslemler.SelectedItem == null)
             {
                 MessageBox.Show("Lütfen listeden bir işlem seçiniz.");
                 return;
             }
 
-            // 3. Seçilen işlemin ismini al
-            string secilenIslem = (cmbIslemler.SelectedItem as ComboBoxItem).Content.ToString();
-
-            cikisResmi = null;
-
-            // 4. Hangi işlem seçildiyse ona göre hareket et
-            switch (secilenIslem)
+            try
             {
-                case "Gri Yap":
-                    cikisResmi = GriyeCevir(girisResmi);
-                    break;
+                System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
 
-                case "Histogram Çiz": 
-                    // Histogram resim değiştirmez, sadece grafik çizer
-                    // O yüzden çıkış resmini girişin aynısı yapıyoruz ki sağda boş kalmasın
-                    cikisResmi = girisResmi;
-                    HistogramCiz(girisResmi);
-                    break;
-                case "Sobel Kenar Bulma": 
-                    // Sobel işlemi gri resim üzerinde en iyi çalışır.
-                    // O yüzden önce arka planda resmi griye çeviriyoruz.
-                    Bitmap griHali = GriyeCevir(girisResmi);
+                string secilenIslem = (cmbIslemler.SelectedItem as ComboBoxItem).Content.ToString();
 
-                    // Sonra Sobel motoruna gönderiyoruz.
-                    cikisResmi = SobelEdge(griHali);
-                    break;
-                case "KM İntensity": 
-                    // 1. Matris/K kutusundan değeri alalım
-                    if (cmbMatrisBoyutu.SelectedItem == null)
-                    {
-                        MessageBox.Show("Lütfen bir K değeri (Matris Boyutu) seçiniz!");
-                        return;
-                    }
+                cikisResmi = null;
 
-                    // Seçilen sayı string ("3") olarak gelir, int'e çeviriyoruz
-                    string kYazisi = (cmbMatrisBoyutu.SelectedItem as ComboBoxItem).Content.ToString();
-                    int kDegeri = int.Parse(kYazisi);
+                switch (secilenIslem)
+                {
+                    case "Gri Yap":
+                        cikisResmi = GriyeCevir(girisResmi);
+                        break;
 
-                    // 2. K-Means motorunu çalıştır
-                    cikisResmi = KMeansIntensity(girisResmi, kDegeri);
-                    break;
-                case "KM Öklid RGB":
-                    // 1. K Değerini Al (Matris Boyutu kutusundan)
-                    if (cmbMatrisBoyutu.SelectedItem == null)
-                    {
-                        MessageBox.Show("Lütfen bir K değeri (Matris Boyutu) seçiniz!");
-                        return;
-                    }
-                    // Seçilen sayıyı al
-                    int kRgb = int.Parse((cmbMatrisBoyutu.SelectedItem as ComboBoxItem).Content.ToString());
+                    case "Histogram Çiz":
+                        cikisResmi = girisResmi;
+                        HistogramCiz(girisResmi);
+                        break;
+                    case "Sobel Kenar Bulma":
+                        Bitmap griHali = GriyeCevir(girisResmi);
 
-                    // 2. Fonksiyonu Çağır
-                    cikisResmi = KMOklidRGB(girisResmi, kRgb);
-                    break;
-                case "Mahalanobis ND": // 6. HAFTA (FİNAL)
-                    if (cmbMatrisBoyutu.SelectedItem == null)
-                    {
-                        MessageBox.Show("K Değeri seç!");
-                        return;
-                    }
-                    int kMaha = int.Parse((cmbMatrisBoyutu.SelectedItem as ComboBoxItem).Content.ToString());
+                        cikisResmi = SobelEdge(griHali);
+                        break;
+                    case "KM İntensity":
+                        if (cmbMatrisBoyutu.SelectedItem == null)
+                        {
+                            MessageBox.Show("Lütfen bir K değeri (Matris Boyutu) seçiniz!");
+                            return;
+                        }
 
-                    // Mahalanobis motorunu çalıştır
-                    cikisResmi = KMMahalanobis(girisResmi, kMaha);
-                    break;
-                case "Mahalanobis Gri Tonlama":
-                    // BU YENİ EKLENDİ (GRİ OLANI)
-                    if (cmbMatrisBoyutu.SelectedItem == null) { MessageBox.Show("K Değeri seç!"); return; }
-                    int kMahaGri = int.Parse((cmbMatrisBoyutu.SelectedItem as ComboBoxItem).Content.ToString());
-                    cikisResmi = KMMahalanobisGri(girisResmi, kMahaGri);
-                    break;
-                default:
-                    MessageBox.Show("Bu işlem henüz kodlanmadı veya ismi yanlış.");
-                    break;
+                        string kYazisi = (cmbMatrisBoyutu.SelectedItem as ComboBoxItem).Content.ToString();
+                        int kDegeri = int.Parse(kYazisi);
+
+                        cikisResmi = KMeansIntensity(girisResmi, kDegeri);
+                        break;
+                    case "KM Öklid RGB":
+                        if (cmbMatrisBoyutu.SelectedItem == null)
+                        {
+                            MessageBox.Show("Lütfen bir K değeri (Matris Boyutu) seçiniz!");
+                            return;
+                        }
+                        int kRgb = int.Parse((cmbMatrisBoyutu.SelectedItem as ComboBoxItem).Content.ToString());
+                        cikisResmi = KMOklidRGB(girisResmi, kRgb);
+                        break;
+                    case "Mahalanobis ND": 
+                        if (cmbMatrisBoyutu.SelectedItem == null)
+                        {
+                            MessageBox.Show("K Değeri seç!");
+                            return;
+                        }
+                        int kMaha = int.Parse((cmbMatrisBoyutu.SelectedItem as ComboBoxItem).Content.ToString());
+
+                        cikisResmi = Mahalanobis(girisResmi, kMaha);
+                        break;
+                    case "Mahalanobis Gri Tonlama":
+                        if (cmbMatrisBoyutu.SelectedItem == null) { MessageBox.Show("K Değeri seç!"); return; }
+                        int kMahaGri = int.Parse((cmbMatrisBoyutu.SelectedItem as ComboBoxItem).Content.ToString());
+                        cikisResmi = MahalanobisGri(girisResmi, kMahaGri);
+                        break;
+                    default:
+                        MessageBox.Show("Bu işlem henüz kodlanmadı veya ismi yanlış.");
+                        break;
+                }
+
+                if (cikisResmi != null)
+                {
+                    imgCikis.Source = ResimCevir(cikisResmi);
+                    ListeyiDoldur(cikisResmi, lstCikisPikselleri);
+                }
+
             }
-
-            // 5. Sonuç oluştuysa sağ taraftaki kutuya ve tabloya bas
-            if (cikisResmi != null)
+            finally
             {
-                imgCikis.Source = ResimCevir(cikisResmi);
-                ListeyiDoldur(cikisResmi, lstCikisPikselleri);
+                System.Windows.Input.Mouse.OverrideCursor = null;
             }
         }
         private Bitmap GriyeCevir(Bitmap bmp)
@@ -210,16 +195,13 @@ namespace bilgisayarliGorme
             return yeni;
         }
     
-        // HİSTOGRAM ÇİZME
         private void HistogramCiz(Bitmap bmp)
         {
-            // 1. Önce eski çizimleri temizle
             cnvHistogram.Children.Clear();
 
             int[] sayac = new int[256]; 
             int maxPiksel = 0;
 
-            // 2. Resimdeki tüm pikselleri say
             for (int x = 0; x < bmp.Width; x++)
             {
                 for (int y = 0; y < bmp.Height; y++)
@@ -232,7 +214,6 @@ namespace bilgisayarliGorme
                 }
             }
 
-            // 3. Grafiği Çiz 
             double genislik = cnvHistogram.ActualWidth;
             double yukseklik = cnvHistogram.ActualHeight;
             
@@ -255,60 +236,44 @@ namespace bilgisayarliGorme
                 cnvHistogram.Children.Add(cubuk);
             }
         }
-        // SOBEL KENAR BULMA ALGORİTMASI
         private Bitmap SobelEdge(Bitmap griResim)
         {
-            // Sobel için yatay ve dikey filtre matrisleri (Sabit Kurallar)
             int[,] sobelYatay = new int[,] { { -1, 0, 1 }, { -2, 0, 2 }, { -1, 0, 1 } };
             int[,] sobelDikey = new int[,] { { -1, -2, -1 }, { 0, 0, 0 }, { 1, 2, 1 } };
 
-            // 1. Yatay çizgileri bul
             Bitmap yatay = SobelFiltreUygula(griResim, sobelYatay);
-
-            // 2. Dikey çizgileri bul
             Bitmap dikey = SobelFiltreUygula(griResim, sobelDikey);
-
-            // 3. İkisini birleştirip tam sonucu üret
             return KenarBirlestir(yatay, dikey);
         }
 
-        // YARDIMCI: Filtre Uygulama Motoru
+        // Filtre Uygulama 
         private Bitmap SobelFiltreUygula(Bitmap resim, int[,] filtre)
         {
             Bitmap sonuc = new Bitmap(resim.Width, resim.Height);
 
-            // Kenarlarda taşma olmasın diye 1 piksel içeriden başlıyoruz
             for (int x = 1; x < resim.Width - 1; x++)
             {
                 for (int y = 1; y < resim.Height - 1; y++)
                 {
                     int toplamRenk = 0;
 
-                    // 3x3 Matris Gezintisi (Komşu piksellere bakma)
                     for (int i = -1; i <= 1; i++)
                     {
                         for (int j = -1; j <= 1; j++)
                         {
                             Color p = resim.GetPixel(x + i, y + j);
-                            // Renk değerini filtredeki sayıyla çarp
-                            // (Sadece R kanalını alıyoruz çünkü resim zaten gri olacak)
                             toplamRenk += (p.R * filtre[i + 1, j + 1]);
                         }
                     }
-
-                    // Değer negatif çıkabilir, mutlak değerini al
                     toplamRenk = Math.Abs(toplamRenk);
-
-                    // 255'i geçerse sınırla (Clamp işlemi)
-                    if (toplamRenk > 255) toplamRenk = 255;
-
+                    if (toplamRenk > 255) toplamRenk = 255
                     sonuc.SetPixel(x, y, Color.FromArgb(toplamRenk, toplamRenk, toplamRenk));
                 }
             }
             return sonuc;
         }
 
-        // YARDIMCI: İki Resmi (Yatay + Dikey) Birleştirme
+        // İki Resmi (Yatay + Dikey) Birleştirme
         private Bitmap KenarBirlestir(Bitmap yatay, Bitmap dikey)
         {
             Bitmap birlesik = new Bitmap(yatay.Width, yatay.Height);
@@ -319,26 +284,19 @@ namespace bilgisayarliGorme
                 {
                     Color p1 = yatay.GetPixel(x, y);
                     Color p2 = dikey.GetPixel(x, y);
-
-                    // Formül: Yatay + Dikey
                     int yeniDeger = p1.R + p2.R;
-
-                    // Yine 255'i geçmemesi için sınır koyuyoruz
                     if (yeniDeger > 255) yeniDeger = 255;
-
                     birlesik.SetPixel(x, y, Color.FromArgb(yeniDeger, yeniDeger, yeniDeger));
                 }
             }
             return birlesik;
         }
-        // K-MEANS KÜMELEME (INTENSITY / GRİ)
+        // K-MEANS (INTENSITY / GRİ)
         private Bitmap KMeansIntensity(Bitmap orjinal, int kDegeri)
         {
             int genislik = orjinal.Width;
             int yukseklik = orjinal.Height;
 
-            // Önce resmi griye çevirip pikselleri tek bir diziye alalım
-            // (Bu işlem algoritmayı hızlandırır)
             int[] pikseller = new int[genislik * yukseklik];
             int index = 0;
 
@@ -347,32 +305,27 @@ namespace bilgisayarliGorme
                 for (int x = 0; x < genislik; x++)
                 {
                     Color c = orjinal.GetPixel(x, y);
-                    // Gri tonunu hesapla
                     int gri = (int)(c.R * 0.3 + c.G * 0.59 + c.B * 0.11);
                     pikseller[index++] = gri;
                 }
             }
 
-            // Rastgele K tane merkez (T Değeri) seçelim
             Random rastgele = new Random();
             double[] merkezler = new double[kDegeri];
             for (int i = 0; i < kDegeri; i++)
             {
-                // Rastgele bir pikselin değerini merkez yap
                 merkezler[i] = pikseller[rastgele.Next(pikseller.Length)];
             }
 
-            int[] kumeAtamalari = new int[pikseller.Length]; // Hangi piksel hangi kümede?
+            int[] kumeAtamalari = new int[pikseller.Length]; 
             bool degisimVar = true;
             int iterasyon = 0;
 
-            // K-Means Döngüsü (Merkezler sabitlenene kadar dön)
-            while (degisimVar && iterasyon < 100) // Sonsuz döngü olmasın diye 100 ile sınırladık
+            while (degisimVar && iterasyon < 100) 
             {
                 degisimVar = false;
                 iterasyon++;
 
-                // Her pikseli en yakın merkeze ata
                 for (int i = 0; i < pikseller.Length; i++)
                 {
                     int pikselDegeri = pikseller[i];
@@ -396,7 +349,6 @@ namespace bilgisayarliGorme
                     }
                 }
 
-                // Yeni merkezleri hesapla (Ortalama al)
                 double[] toplamlar = new double[kDegeri];
                 int[] sayilar = new int[kDegeri];
 
@@ -411,17 +363,31 @@ namespace bilgisayarliGorme
                 {
                     if (sayilar[j] > 0)
                         merkezler[j] = toplamlar[j] / sayilar[j];
+                    else
+                    {
+                        merkezler[j] = pikseller[rastgele.Next(pikseller.Length)];
+                    }
+
                 }
+
             }
 
-            // İstatistikleri Ekrana Yazdır (Kaç tur döndü, merkezler ne oldu?)
+            int[] pikselSayilari = new int[kDegeri];
+            for (int i = 0; i < pikseller.Length; i++)
+            {
+                pikselSayilari[kumeAtamalari[i]]++;
+            }
+
             lblIterasyon.Content = iterasyon.ToString();
 
-            string merkezBilgisi = "";
-            for (int i = 0; i < kDegeri; i++) merkezBilgisi += ((int)merkezler[i]) + " ";
-            lblTDegeri.Content = merkezBilgisi; // T Değerlerini yan yana yazar
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("SONUÇ");
+            for (int i = 0; i < kDegeri; i++)
+            {
+                sb.AppendLine($"Küme {i + 1}: T={(int)merkezler[i]}\t (Adet: {pikselSayilari[i]})");
+            }
+            txtSonuc.Text = sb.ToString();
 
-            // Sonuç Resmini Oluştur (Pikselleri merkez rengine boya)
             Bitmap sonuc = new Bitmap(genislik, yukseklik);
             index = 0;
             for (int y = 0; y < yukseklik; y++)
@@ -429,9 +395,8 @@ namespace bilgisayarliGorme
                 for (int x = 0; x < genislik; x++)
                 {
                     int kume = kumeAtamalari[index++];
-                    int yeniRenk = (int)merkezler[kume]; // O kümenin merkez rengi neyse o olsun
+                    int yeniRenk = (int)merkezler[kume]; 
 
-                    // 255 kontrolü
                     if (yeniRenk > 255) yeniRenk = 255;
                     if (yeniRenk < 0) yeniRenk = 0;
 
@@ -447,7 +412,6 @@ namespace bilgisayarliGorme
             int genislik = orjinal.Width;
             int yukseklik = orjinal.Height;
 
-            // Resimdeki tüm renkleri diziye al
             RenkYapisi[] pikseller = new RenkYapisi[genislik * yukseklik];
             int index = 0;
             for (int y = 0; y < yukseklik; y++)
@@ -459,7 +423,6 @@ namespace bilgisayarliGorme
                 }
             }
 
-            // Rastgele Merkezler Seç
             Random rastgele = new Random();
             RenkYapisi[] merkezler = new RenkYapisi[kDegeri];
             for (int i = 0; i < kDegeri; i++)
@@ -477,7 +440,6 @@ namespace bilgisayarliGorme
                 degisimVar = false;
                 iterasyon++;
 
-                // En yakın merkezi bul (Öklid)
                 for (int i = 0; i < pikseller.Length; i++)
                 {
                     RenkYapisi p = pikseller[i];
@@ -507,7 +469,6 @@ namespace bilgisayarliGorme
                     }
                 }
 
-                // Merkezleri Güncelle
                 long[] tR = new long[kDegeri];
                 long[] tG = new long[kDegeri];
                 long[] tB = new long[kDegeri];
@@ -533,9 +494,28 @@ namespace bilgisayarliGorme
                 }
             }
 
-            // İstatistikleri Ekrana Yaz
             lblIterasyon.Content = iterasyon.ToString();
-            lblTDegeri.Content = "RGB Merkezleri";
+
+            // Hangi kümede kaç piksel var
+            int[] rgbSayilar = new int[kDegeri];
+            for (int i = 0; i < pikseller.Length; i++)
+            {
+                rgbSayilar[kumeAtamalari[i]]++;
+            }
+
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.AppendLine(" RGB KÜME ");
+
+            for (int i = 0; i < kDegeri; i++)
+            {
+                int r = merkezler[i].r;
+                int g = merkezler[i].g;
+                int b = merkezler[i].b;
+
+                sb.AppendLine($"Küme {i + 1}: [{r}, {g}, {b}]\t (Piksel Sayısı: {rgbSayilar[i]})");
+            }
+            txtSonuc.Text = sb.ToString();
+
 
             // Sonuç Resmini Oluştur
             Bitmap sonuc = new Bitmap(genislik, yukseklik);
@@ -551,15 +531,13 @@ namespace bilgisayarliGorme
             return sonuc;
         }
 
-        // 1. MAHALANOBIS RGB 
-        
-        private Bitmap KMMahalanobis(Bitmap renkliResim, int k)
+        // MAHALANOBIS RGB 
+        private Bitmap Mahalanobis(Bitmap renkliResim, int k)
         {
-            int maxIter = 20; // İterasyon sınırı
+            int maxIter = 100; 
             int width = renkliResim.Width;
             int height = renkliResim.Height;
 
-            // 1) Pikselleri al
             (int R, int G, int B)[] pixels = new (int, int, int)[width * height];
             int index = 0;
             for (int y = 0; y < height; y++)
@@ -571,7 +549,6 @@ namespace bilgisayarliGorme
                 }
             }
 
-            // 2) Rastgele k merkez seç
             Random rand = new Random();
             (double R, double G, double B)[] means = pixels
                 .OrderBy(p => rand.Next())
@@ -579,7 +556,7 @@ namespace bilgisayarliGorme
                 .Select(px => ((double)px.R, (double)px.G, (double)px.B))
                 .ToArray();
 
-            // 3) Başlangıç Kovaryans Matrisleri
+            // Başlangıç Kovaryans Matrisleri
             double[][,] covariances = new double[k][,];
             for (int i = 0; i < k; i++) covariances[i] = Identity3x3();
 
@@ -589,22 +566,18 @@ namespace bilgisayarliGorme
             bool changed = true;
             int iteration = 0;
 
-            // 5) K-Means döngüsü
             while (changed && iteration < maxIter)
             {
                 iteration++;
                 changed = false;
 
-                // 5.1) Atama
                 for (int i = 0; i < pixels.Length; i++)
                 {
                     (int r, int g, int b) = pixels[i];
                     int bestCluster = 0;
 
-                    // İlk merkeze olan mesafe
                     double bestDist = MahalanobisDistance(r, g, b, means[0], covariances[0]);
 
-                    // Eğer hesap hatası (NaN) varsa çok büyük sayı ver ki seçilmesin
                     if (double.IsNaN(bestDist)) bestDist = double.MaxValue;
 
                     for (int m = 1; m < k; m++)
@@ -626,7 +599,6 @@ namespace bilgisayarliGorme
                     }
                 }
 
-                // 5.2) Ortalamaları Güncelle
                 double[] sumR = new double[k];
                 double[] sumG = new double[k];
                 double[] sumB = new double[k];
@@ -647,11 +619,10 @@ namespace bilgisayarliGorme
                         means[m] = (sumR[m] / counts[m], sumG[m] / counts[m], sumB[m] / counts[m]);
                 }
 
-                // 5.3) Kovaryans Matrislerini Güncelle (VE DÜZELT)
                 double[][,] newCovs = new double[k][,];
                 for (int m = 0; m < k; m++)
                 {
-                    if (counts[m] < 10) // Yetersiz veri varsa Birim Matris yap
+                    if (counts[m] < 10) 
                     {
                         newCovs[m] = Identity3x3();
                         continue;
@@ -678,9 +649,6 @@ namespace bilgisayarliGorme
                         for (int col = 0; col < 3; col++)
                             cov[row, col] /= counts[m];
 
-                    // Matrisin çökmesini engellemek için köşegenlere büyük sayı ekliyoruz.
-                    // Bu işlem Mahalanobis'i biraz Öklid'e benzetir ama dağılım özelliğini korur.
-                    // Bu sayede siyah ekran sorunu çözülür.
                     double guvenlikPayi = 100.0;
                     cov[0, 0] += guvenlikPayi;
                     cov[1, 1] += guvenlikPayi;
@@ -694,11 +662,32 @@ namespace bilgisayarliGorme
                 covariances = newCovs;
             }
 
-            // Arayüz
             lblIterasyon.Content = iteration.ToString();
-            lblTDegeri.Content = "Mahalanobis ND";
 
-            // 6) Sonuç
+            int[] ndSayilar = new int[k];
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                if (clusterAssignments[i] >= 0 && clusterAssignments[i] < k)
+                {
+                    ndSayilar[clusterAssignments[i]]++;
+                }
+            }
+
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.AppendLine(" MAHALANOBIS RGB ");
+
+            for (int i = 0; i < k; i++)
+            {
+                int r = (int)means[i].R;
+                int g = (int)means[i].G;
+                int b = (int)means[i].B;
+
+                sb.AppendLine($"Küme {i + 1}: [{r}, {g}, {b}]\t (Adet: {ndSayilar[i]})");
+            }
+            txtSonuc.Text = sb.ToString();
+
+
+            // Sonuç
             Bitmap output = new Bitmap(width, height);
             index = 0;
             for (int y = 0; y < height; y++)
@@ -715,14 +704,13 @@ namespace bilgisayarliGorme
             return output;
         }
 
-        // 2. MAHALANOBIS GRİ TONLAMA 
-        private Bitmap KMMahalanobisGri(Bitmap griResim, int k)
+        // MAHALANOBIS GRİ TONLAMA 
+        private Bitmap MahalanobisGri(Bitmap griResim, int k)
         {
-            int maxIter = 100; // İterasyon 100 olsun
+            int maxIter = 100; 
             int genislik = griResim.Width;
             int yukseklik = griResim.Height;
 
-            // 1) Resimdeki tüm gri ton değerlerini diziye çek
             int[] pikseller = new int[genislik * yukseklik];
             int indeks = 0;
             for (int y = 0; y < yukseklik; y++)
@@ -730,13 +718,11 @@ namespace bilgisayarliGorme
                 for (int x = 0; x < genislik; x++)
                 {
                     Color renk = griResim.GetPixel(x, y);
-                    // Luma yöntemi (Daha doğal gri)
                     int griDeger = (int)(renk.R * 0.3 + renk.G * 0.59 + renk.B * 0.11);
                     pikseller[indeks++] = griDeger;
                 }
             }
 
-            // 2) Rastgele k merkez seç
             Random rastgele = new Random();
             double[] ortalamalar = pikseller
                 .OrderBy(p => rastgele.Next())
@@ -744,7 +730,6 @@ namespace bilgisayarliGorme
                 .Select(p => (double)p)
                 .ToArray();
 
-            // 3) Başlangıçta her kümeye birim varyans
             double[] varyanslar = Enumerable.Repeat(1.0, k).ToArray();
 
             int[] kumeler = new int[pikseller.Length];
@@ -753,19 +738,17 @@ namespace bilgisayarliGorme
             bool degisiklikOldu = true;
             int iterasyon = 0;
 
-            // 5) K-Means döngüsü
+            // K-Means döngüsü
             while (degisiklikOldu && iterasyon < maxIter)
             {
                 iterasyon++;
                 degisiklikOldu = false;
 
-                // 5.1) Atama
                 for (int i = 0; i < pikseller.Length; i++)
                 {
                     int griDeger = pikseller[i];
                     int enIyiKume = 0;
 
-                    // İlk merkeze olan mesafe
                     double enIyiMesafe = MahalanobisMesafesi(griDeger, ortalamalar[0], varyanslar[0]);
                     if (double.IsNaN(enIyiMesafe)) enIyiMesafe = double.MaxValue;
 
@@ -788,7 +771,6 @@ namespace bilgisayarliGorme
                     }
                 }
 
-                // 5.2) Güncelleme
                 double[] toplam = new double[k];
                 int[] sayilar = new int[k];
 
@@ -801,7 +783,17 @@ namespace bilgisayarliGorme
 
                 for (int m = 0; m < k; m++)
                 {
-                    if (sayilar[m] > 0) ortalamalar[m] = toplam[m] / sayilar[m];
+                    if (sayilar[m] > 0)
+                    {
+                        ortalamalar[m] = toplam[m] / sayilar[m];
+                    }
+                    else
+                    {
+                        ortalamalar[m] = (double)pikseller[rastgele.Next(pikseller.Length)];
+
+                        varyanslar[m] = 100.0; 
+                    }
+
                 }
 
                 double[] yeniVaryanslar = new double[k];
@@ -819,19 +811,27 @@ namespace bilgisayarliGorme
                     else
                         yeniVaryanslar[m] = 1.0;
 
-                    // Varyansın sıfıra düşüp patlamasını engellemek için güvenlik payı ekliyoruz.
                     yeniVaryanslar[m] += 100.0;
                 }
                 varyanslar = yeniVaryanslar;
             }
 
-            // Arayüzü güncelle
-            lblIterasyon.Content = iterasyon.ToString();
-            string merkezBilgi = "";
-            for (int i = 0; i < k; i++) merkezBilgi += (int)ortalamalar[i] + " ";
-            lblTDegeri.Content = merkezBilgi;
+            int[] pikselSayilari = new int[k];
+            for (int i = 0; i < pikseller.Length; i++)
+            {
+                pikselSayilari[kumeler[i]]++;
+            }
 
-            // 6) Sonuç resmi oluştur
+            lblIterasyon.Content = iterasyon.ToString();
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Sonuç");
+            for (int i = 0; i < k; i++)
+            {
+                sb.AppendLine($"Küme {i + 1}: T={(int)ortalamalar[i]}\t (Adet: {pikselSayilari[i]})");
+            }
+            txtSonuc.Text = sb.ToString();
+
             Bitmap sonuc = new Bitmap(genislik, yukseklik);
             indeks = 0;
             for (int y = 0; y < yukseklik; y++)
@@ -847,7 +847,6 @@ namespace bilgisayarliGorme
         }
 
         // YARDIMCI MATEMATİK MOTORU
-
         private double MahalanobisDistance(int r, int g, int b, (double R, double G, double B) mean, double[,] cov)
         {
             double dr = r - mean.R;
@@ -940,7 +939,7 @@ namespace bilgisayarliGorme
                     
                     Color c = RenkEkrandanOku((int)ekranKonum.X, (int)ekranKonum.Y);
                     
-                    lblFareRenk.Content = $"Ekran: {(int)mouseKonum.X},{(int)mouseKonum.Y} | Renk: R:{c.R} G:{c.G} B:{c.B}";
+                    lblFareRenk.Content = $"Konum: {(int)mouseKonum.X},{(int)mouseKonum.Y} | Renk: R:{c.R} G:{c.G} B:{c.B}";
                 }
             }
             catch
@@ -967,7 +966,7 @@ namespace bilgisayarliGorme
             // HAFIZADAN OKU
             Color c = orjinalVeri.GetPixel(gercekX, gercekY);
 
-            lblFareRenk.Content = $"Resim: {gercekX},{gercekY} | Renk: R:{c.R} G:{c.G} B:{c.B}";
+            lblFareRenk.Content = $"Konum: {gercekX},{gercekY} | Renk: R:{c.R} G:{c.G} B:{c.B}";
         }
 
         private Color RenkEkrandanOku(int x, int y)
